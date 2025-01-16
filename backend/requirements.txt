@@ -1,0 +1,8 @@
+fastapi[all]         # FastAPI with all dependencies
+uvicorn              # ASGI server
+pydantic             # Data validation
+pytest               # For testing
+python-jose[cryptography]  # For JWT tokens
+passlib[bcrypt]      # For password hashing
+firebase-admin       # For Firebase integration
+python-multipart     # For handling form data
