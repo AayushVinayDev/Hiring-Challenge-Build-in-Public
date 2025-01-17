@@ -43,6 +43,93 @@ default_config = {
     ]
 }
 
+def generate_problem(config: GameConfig) -> Problem:
+    """
+    Generate a new problem based on the game configuration.
+    Ensures there are exactly two correct combinations in the options.
+    """
+    min_num, max_num = config.target_number_range
+    target = random.randint(min_num, max_num)
+    
+    # Generate all possible pairs that sum to target within the range
+    valid_pairs = []
+    for i in range(min_num, max_num + 1):
+        complement = target - i
+        if min_num <= complement <= max_num and i <= complement:
+            valid_pairs.append((i, complement))
+    
+    # If we can't find at least two valid pairs, adjust the target
+    attempts = 0
+    while len(valid_pairs) < 2 and attempts < 10:
+        target = random.randint(min_num, max_num)
+        valid_pairs = []
+        for i in range(min_num, max_num + 1):
+            complement = target - i
+            if min_num <= complement <= max_num and i <= complement:
+                valid_pairs.append((i, complement))
+        attempts += 1
+    
+    # If we still can't find valid pairs, create artificial ones just outside the range
+    if len(valid_pairs) < 2:
+        # Create one valid pair within range
+        num1 = random.randint(min_num, target - min_num)
+        valid_pairs = [(num1, target - num1)]
+        # Add one more valid pair (might be slightly outside range)
+        num2 = random.randint(min_num, target - min_num)
+        while num2 == num1:
+            num2 = random.randint(min_num, target - min_num)
+        valid_pairs.append((num2, target - num2))
+    
+    # Select two random valid pairs for our correct options
+    selected_pairs = random.sample(valid_pairs, 2)
+    options = list(selected_pairs[0] + selected_pairs[1])
+    
+    # Generate additional options to have 5 total
+    while len(options) < 5:
+        new_num = random.randint(min_num, max_num)
+        # Ensure the new number doesn't create another valid sum
+        if new_num not in options and (target - new_num) not in options:
+            options.append(new_num)
+    
+    # Shuffle the options
+    random.shuffle(options)
+    
+    return Problem(target=target, options=options)
+
+@app.on_event("startup")
+async def startup_event():
+    # Create default game configuration if it doesn't exist
+    config_ref = db.collection('GameConfigurations').document('default')
+    if not config_ref.get().exists:
+        config_ref.set(default_config)
+
+@app.get("/game/problem", response_model=Problem)
+async def get_game_problem(current_user: dict = Depends(get_current_user)):
+    """
+    Generate a new problem based on the current game configuration.
+    This endpoint requires authentication.
+    """
+    try:
+        # Get the current game configuration
+        config_ref = db.collection('GameConfigurations').document('default')
+        doc = config_ref.get()
+        
+        if not doc.exists:
+            config_ref.set(default_config)
+            config = GameConfig(**default_config)
+        else:
+            config = GameConfig(**doc.to_dict())
+        
+        # Generate and return the problem
+        problem = generate_problem(config)
+        return problem
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating problem: {str(e)}"
+        )
+
 # Game configuration endpoint
 @app.get("/game/config", response_model=GameConfig)
 async def get_game_config(current_user: dict = Depends(get_current_user)):
