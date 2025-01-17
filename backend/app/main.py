@@ -43,6 +43,30 @@ default_config = {
     ]
 }
 
+# Game configuration endpoint
+@app.get("/game/config", response_model=GameConfig)
+async def get_game_config(current_user: dict = Depends(get_current_user)):
+    """
+    Retrieve the default game configuration from Firestore.
+    This endpoint requires authentication.
+    """
+    try:
+        config_ref = db.collection('GameConfigurations').document('default')
+        doc = config_ref.get()
+        
+        if not doc.exists:
+            # If default config doesn't exist (shouldn't happen due to startup event)
+            # create it and return
+            config_ref.set(default_config)
+            return GameConfig(**default_config)
+            
+        return GameConfig(**doc.to_dict())
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error retrieving game configuration: {str(e)}"
+        )
+
 
 # Authentication endpoints
 @app.post("/auth/signup", response_model=AuthResponse)
