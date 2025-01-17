@@ -4,6 +4,32 @@ For this challenge, you'll implement one of our planned activities: **The Balanc
 
 This implementation will serve as a template for how we structure and build future activities.
 
+>This is an excellent opportunity to showcase your skills while contributing to educational technology. All contributions will be publicly available, and any features or improvements that are incorporated into the project **will be credited to their creators**.
+
+
+## But First, A Bit About Us
+
+**Anyone can learn anything!**
+
+We are [Comini Learning](https://www.comini.in/).
+
+We truly believe this, and we are building an ecosystem of tools to help make it happen. Starting with early education, we're creating a new, **playful, personalized, and meaningful way of learning**.
+
+Our approach combines both offline and online experiences:
+- We run [microschools](https://www.comini.in/) that bring learning to life
+- We develop online learning tools that adapt to each student
+- We're building [learning copilots](https://tryripples.comini.in/) to support parents and educators
+
+We realized that to enable personalized meaningful offline learning, we need to build our own full-stack of technology & AI tools that help with the philosophy (why), process (how), and practice (what) of learning. 
+
+One of our key initiatives is [Zippie, our "microschool in a box"](https://www.youtube.com/watch?v=FqjGiSW8G_s) that integrates all these elements from the ground up.
+
+You can read more about [our approach](https://blog.comini.in/p/how-can-we-personalize-learning) and [how we hire](https://saigaddam.medium.com/hiring-well-needs-systems-thinking-ce1ea4c45a09/).
+
+Come help us build this ecosystem of tools and transform education for hundreds of millions!
+
+**[Comini Learning](https://www.comini.in/) | [Our Blog](https://blog.comini.in/)**
+
 ## **Technical Requirements**
 
 ### **Frontend (Vue.js)**
@@ -72,6 +98,9 @@ This balance scale game is just the beginning. Your implementation will help est
 - Science simulation activities
 
 By building this foundation well, you'll help us create a platform that makes learning more intuitive and engaging for students worldwide.
+
+>This is an excellent opportunity to showcase your skills while contributing to educational technology. All contributions will be publicly available, and any features or improvements that are incorporated into the project **will be credited to their creators**.
+
 
 ## **Licensing**
 
