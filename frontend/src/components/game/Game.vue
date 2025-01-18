@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useAuthStore } from '@/stores/auth';
+import { useConnectivityStore } from '@/stores/connectivity';
 import { gameApi } from '@/api/game';
 import type { Problem, GameConfig, UserProgress } from '@/api/game';
 import BalanceScale from './BalanceScale.vue';
@@ -8,6 +9,7 @@ import ProgressBar from './ProgressBar.vue';
 import FeedbackMessage from './FeedbackMessage.vue';
 
 const authStore = useAuthStore();
+const connectivityStore = useConnectivityStore();
 const config = ref<GameConfig | null>(null);
 const currentProblem = ref<Problem | null>(null);
 const userProgress = ref<UserProgress | null>(null);
@@ -15,6 +17,7 @@ const selectedOptions = ref<number[]>([]);
 const tiltAngle = ref(0);
 const feedback = ref({ message: '', type: 'info' as const, show: false });
 const loading = ref(true);
+const syncMessage = ref({ show: false, message: '' });
 
 const fetchGameConfig = async () => {
   try {
@@ -54,6 +57,16 @@ const showFeedback = (message: string, type: 'success' | 'error' | 'info') => {
   };
 };
 
+const showSyncMessage = (message: string) => {
+  syncMessage.value = {
+    show: true,
+    message,
+  };
+  setTimeout(() => {
+    syncMessage.value.show = false;
+  }, 3000);
+};
+
 const toggleOption = (option: number) => {
   const index = selectedOptions.value.indexOf(option);
   if (index === -1) {
@@ -64,7 +77,7 @@ const toggleOption = (option: number) => {
 };
 
 const submitAnswer = async () => {
-  if (!currentProblem.value || !authStore.user?.id) return;
+  if (!currentProblem.value || !authStore.user?.id || !userProgress.value) return;
 
   try {
     const response = await gameApi.submitAnswer(
@@ -76,8 +89,28 @@ const submitAnswer = async () => {
     tiltAngle.value = response.tiltAngle;
     showFeedback(response.feedback, response.correct ? 'success' : 'error');
 
-    // Update progress
-    await fetchUserProgress();
+    // Save progress locally
+    connectivityStore.saveLocalProgress({
+      level: response.newLevel,
+      xp: response.newScore,
+      questionsCorrect: userProgress.value.questionsCorrect + (response.correct ? 1 : 0),
+      questionsAttempted: userProgress.value.questionsAttempted + 1,
+      timestamp: Date.now(),
+    });
+
+    // Try to sync if online
+    if (connectivityStore.isOnline) {
+      try {
+        const syncedData = await connectivityStore.syncProgress();
+        if (syncedData) {
+          showSyncMessage('Progress synced!');
+          // Update local state with server data
+          userProgress.value = syncedData;
+        }
+      } catch (error) {
+        console.error('Failed to sync progress:', error);
+      }
+    }
 
     // Load new problem after a delay
     setTimeout(fetchNewProblem, 2000);
@@ -86,6 +119,21 @@ const submitAnswer = async () => {
     showFeedback('Failed to submit answer', 'error');
   }
 };
+
+// Watch for online status changes
+watch(() => connectivityStore.isOnline, async (isOnline) => {
+  if (isOnline) {
+    try {
+      const syncedData = await connectivityStore.syncProgress();
+      if (syncedData) {
+        showSyncMessage('Progress synced!');
+        userProgress.value = syncedData;
+      }
+    } catch (error) {
+      console.error('Failed to sync progress:', error);
+    }
+  }
+});
 
 onMounted(async () => {
   await Promise.all([
@@ -99,11 +147,28 @@ onMounted(async () => {
 
 <template>
   <div class="min-h-screen bg-gray-50 p-4">
+    <!-- Offline Indicator -->
+    <div
+      v-if="!connectivityStore.isOnline"
+      class="fixed top-0 left-0 right-0 bg-yellow-500 text-white text-center py-2"
+    >
+      You're offline. Progress will be saved locally and synced when you reconnect.
+    </div>
+
+    <!-- Sync Message -->
+    <div
+      v-if="syncMessage.show"
+      class="fixed top-16 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg"
+    >
+      {{ syncMessage.message }}
+    </div>
+
     <div v-if="loading" class="flex items-center justify-center min-h-screen">
       <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
     </div>
 
     <template v-else>
+      <!-- Rest of the game UI remains the same -->
       <!-- Progress Section -->
       <div class="mb-8" v-if="userProgress">
         <ProgressBar
