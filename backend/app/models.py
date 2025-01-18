@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import List, Dict, Union, Optional
+from typing import List, Dict, Optional
 
 class User(BaseModel):
     userId: str
@@ -9,6 +9,14 @@ class User(BaseModel):
     xp: int = 0
     level: int = 1
     accuracy: float = 0.0
+
+class UserProgress(BaseModel):
+    userId: str
+    name: str
+    level: int
+    xp: int
+    accuracy: float
+    role: str
 
 class ProgressionStep(BaseModel):
     max_addends: int
@@ -26,7 +34,18 @@ class Problem(BaseModel):
     target: int
     options: List[int]
 
-# Auth models
+class AnswerSubmission(BaseModel):
+    problemId: str
+    userAnswer: List[int]
+    correctAnswer: int
+    userId: str
+
+class AnswerResponse(BaseModel):
+    correct: bool
+    user: User
+    message: str
+
+# Auth related models
 class SignUpRequest(BaseModel):
     name: str
     email: EmailStr
