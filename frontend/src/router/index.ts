@@ -5,6 +5,7 @@ import TeacherLogin from '../components/TeacherLogin.vue';
 import StudentSignup from '../components/StudentSignup.vue';
 import TeacherSignup from '../components/TeacherSignup.vue';
 import Game from '../components/game/Game.vue';
+import TeacherDashboard from '../components/dashboard/TeacherDashboard.vue';
 
 const router = createRouter({
   history: createWebHistory(),
@@ -19,6 +20,11 @@ const router = createRouter({
       component: Game,
       meta: { requiresAuth: true }
     },
+    {
+      path: '/teacher/dashboard',
+      component: TeacherDashboard,
+      meta: { requiresAuth: true, requiresTeacher: true }
+    }
   ]
 });
 
@@ -27,6 +33,8 @@ router.beforeEach((to, from, next) => {
   const authStore = useAuthStore();
   
   if (to.meta.requiresAuth && !authStore.user) {
+    next('/');
+  } else if (to.meta.requiresTeacher && authStore.user?.role !== 'teacher') {
     next('/');
   } else {
     next();
